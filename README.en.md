@@ -20,6 +20,8 @@ After switching modes or restoring the shortcuts, quit Antigravity if it is runn
 
 Run `01-Use-Windows-Proxy.cmd` once. After restarting Windows or changing proxy clients, enable the client's Windows system proxy and open Antigravity from a configured shortcut. The next launch picks up any change to the proxy address or port. If your client only uses TUN, run `02-Choose-Connection.cmd` and select option 3.
 
+If Windows or an Antigravity update recreates a shortcut, run the setup script again. It backs up shortcuts that still point to the same Antigravity installation before applying the proxy settings. It leaves unrecognized shortcuts alone.
+
 ### Downloading a ZIP from GitHub
 
 If PowerShell reports that the extracted script came from the internet and is unsigned, review the source before unblocking the file. [PowerShell execution policies](https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_execution_policies)

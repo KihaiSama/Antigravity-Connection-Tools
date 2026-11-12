@@ -181,6 +181,19 @@ function Test-ManagedLink {
         $Link.Arguments -ceq (Get-LauncherArguments $Paths $Location)
 }
 
+function Test-AntigravityShellLink {
+    param([string]$Path)
+
+    $shell = New-Object -ComObject Shell.Application
+    $folder = $shell.NameSpace((Split-Path -Parent $Path))
+    if (-not $folder) {
+        return $false
+    }
+    $item = $folder.ParseName((Split-Path -Leaf $Path))
+    return $null -ne $item -and
+        $item.ExtendedProperty('System.Link.TargetParsingPath') -ieq 'electron.app.Antigravity'
+}
+
 function Get-LinkContents {
     param([string]$Path)
 
@@ -237,12 +250,14 @@ function New-ConnectionState {
         $workingDirectory = ''
         if ($contents) {
             $link = $Shell.CreateShortcut($path)
-            if ([IO.Path]::GetFileName($link.TargetPath) -ine 'Antigravity.exe' -or
-                -not (Test-Path -LiteralPath $link.TargetPath -PathType Leaf)) {
+            if ($link.TargetPath -and
+                [IO.Path]::GetFileName($link.TargetPath) -ieq 'Antigravity.exe' -and
+                (Test-Path -LiteralPath $link.TargetPath -PathType Leaf)) {
+                $app = $link.TargetPath
+            } elseif ($link.TargetPath -or -not (Test-AntigravityShellLink $path)) {
                 Write-Warning "保留了目标无法识别的快捷方式：$path"
                 continue
             }
-            $app = $link.TargetPath
             $arguments = $link.Arguments
             $workingDirectory = $link.WorkingDirectory
         }
@@ -290,10 +305,39 @@ function Get-TrackedPath {
     return $path
 }
 
-function Set-ManagedLinks {
+function Update-ShortcutBackups {
     param($Paths, $State, $Shell)
 
     foreach ($shortcut in $State.Shortcuts) {
+        $path = Get-TrackedPath $Paths $shortcut
+        $current = Get-LinkContents $path
+        if ($current -and $current -cne $shortcut.Original) {
+            $link = $Shell.CreateShortcut($path)
+            if (-not (Test-ManagedLink $link $Paths $shortcut.Location)) {
+                $sameApp = $link.TargetPath -ieq $shortcut.AppPath -or
+                    (-not $link.TargetPath -and (Test-AntigravityShellLink $path))
+                if (-not $sameApp -or -not (Test-Path -LiteralPath $shortcut.AppPath -PathType Leaf)) {
+                    Write-Warning "快捷方式已改为其他或无法识别的目标，已保留：$path"
+                    continue
+                }
+
+                # Preserve the replacement made by Windows or the app installer for rollback.
+                $shortcut.Original = $current
+                $shortcut.AppArguments = $link.Arguments
+                $shortcut.WorkingDirectory = $link.WorkingDirectory
+                if (-not $shortcut.WorkingDirectory) {
+                    $shortcut.WorkingDirectory = Split-Path -Parent $shortcut.AppPath
+                }
+            }
+        }
+        $shortcut
+    }
+}
+
+function Set-ManagedLinks {
+    param($Paths, $Shortcuts, $Shell)
+
+    foreach ($shortcut in $Shortcuts) {
         $path = Get-TrackedPath $Paths $shortcut
         $current = Get-LinkContents $path
         if ($current) {
@@ -470,13 +514,19 @@ function Invoke-ConnectionAction {
             Write-Host '已取消。'
             return
         }
+        $shortcuts = @(Update-ShortcutBackups -Paths $paths -State $state -Shell $shell)
+        if ($shortcuts.Count -eq 0) {
+            throw '找不到可配置的 Antigravity 快捷方式。'
+        }
         $state.Connection = $connection
         [void][IO.Directory]::CreateDirectory($paths.Directory)
         Write-FileAtomically -Path $paths.Launcher -Content ([IO.File]::ReadAllBytes($PSCommandPath))
         $json = $state | ConvertTo-Json -Depth 8
         Write-FileAtomically -Path $paths.State -Content ([Text.Encoding]::UTF8.GetBytes($json))
-        Set-ManagedLinks -Paths $paths -State $state -Shell $shell
-        Write-Host '连接方式已保存，可从桌面或开始菜单启动 Antigravity。'
+        Set-ManagedLinks -Paths $paths -Shortcuts $shortcuts -Shell $shell
+        foreach ($shortcut in $shortcuts) {
+            Write-Host "连接方式已保存：$($shortcut.Path)"
+        }
         Write-RestartNote
     } finally {
         if ($locked) {

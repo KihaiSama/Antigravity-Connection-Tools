@@ -20,6 +20,8 @@
 
 01-Use-Windows-Proxy.cmd 只需运行一次。电脑重启或更换代理客户端后，先开启客户端的 Windows 系统代理，再从已配置的快捷方式打开 Antigravity。代理地址或端口改变时，应用会在下次启动时读取新设置。若当前客户端只开了 TUN，请用 02-Choose-Connection.cmd 切到「直连／TUN」。
 
+如果 Windows 或 Antigravity 更新后重建了快捷方式，请重新运行设置脚本。脚本会备份仍指向同一 Antigravity 安装的快捷方式，再为它配置代理。无法识别的快捷方式会保留原样。
+
 ### 从 GitHub 下载 ZIP
 
 如果从 GitHub 下载的 ZIP 解压后，PowerShell 提示脚本来自网络且未经签名，请先审阅源码，再对脚本文件执行解除锁定。 [PowerShell 执行策略](https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_execution_policies)

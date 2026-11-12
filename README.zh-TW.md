@@ -20,6 +20,8 @@
 
 01-Use-Windows-Proxy.cmd 只需執行一次。重新啟動 Windows 或更換代理軟體後，先在該軟體啟用 Windows 系統 Proxy，再從已設定的捷徑開啟 Antigravity。代理伺服器的位址或連接埠變更後，會在下次啟動時套用。如果只使用 TUN，請執行 02-Choose-Connection.cmd 並選擇 3。
 
+如果 Windows 或 Antigravity 更新後重新建立了捷徑，請再次執行設定腳本。腳本會先備份仍指向同一套 Antigravity 的捷徑，再為它設定代理伺服器。無法辨識的捷徑會保留原樣。
+
 ### 從 GitHub 下載 ZIP
 
 解壓縮後，如果 PowerShell 提示腳本來自網際網路且未簽署，請先檢閱原始碼，再解除該檔案的封鎖。 [PowerShell 執行原則](https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_execution_policies)

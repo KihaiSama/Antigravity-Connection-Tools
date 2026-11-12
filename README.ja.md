@@ -20,6 +20,8 @@ Windows、Windows PowerShell 5.1、および Google Antigravity が必要です�
 
 `01-Use-Windows-Proxy.cmd` の実行は初回だけで済みます。Windows の再起動後やプロキシクライアントの変更後は、クライアントで Windows のシステムプロキシを有効にしてから、設定済みのショートカットで Antigravity を開いてください。アドレスやポートの変更は次回起動時に反映されます。TUN のみを使う場合は、`02-Choose-Connection.cmd` を実行し、3 を選んでください。
 
+Windows または Antigravity の更新でショートカットが作り直された場合は、設定スクリプトを再実行してください。同じ Antigravity のインストール先を指すショートカットをバックアップしてからプロキシを設定します。識別できないショートカットはそのまま残します。
+
 ### GitHub から ZIP をダウンロードした場合
 
 展開したスクリプトについて、PowerShell がインターネットから取得した未署名のファイルだと表示した場合は、ソースを確認したうえで対象ファイルのブロックを解除してください。 [PowerShell の実行ポリシー](https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_execution_policies)

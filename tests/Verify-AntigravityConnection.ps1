@@ -17,7 +17,7 @@ function Assert-Equal {
 }
 
 foreach ($case in @(
-    @('127.0.0.1:7790','http://127.0.0.1:7790'),
+    @('127.0.0.1:8181','http://127.0.0.1:8181'),
     @('https://proxy.example.test','https://proxy.example.test:443'),
     @('socks5://proxy.example.test','socks5://proxy.example.test:1080'),
     @('socks5h://[::1]:1081','socks5h://[::1]:1081')
@@ -135,9 +135,25 @@ try {
     Invoke-ConnectionAction 'Apply' 'Programs' 'System'
     $link = $shell.CreateShortcut($paths.Desktop)
     $link.TargetPath = $fakeApp
-    $link.Arguments = '--third-party-update'
+    $link.Arguments = '--updated-app-shortcut'
+    $link.Save()
+    $updatedDesktop = Get-LinkContents $paths.Desktop
+    Invoke-ConnectionAction 'Apply' 'Programs' 'System'
+    Assert-Equal (Test-ManagedLink ($shell.CreateShortcut($paths.Desktop)) $paths 'Desktop') $true 'same app shortcut can be reapplied after replacement'
+    $updatedBackup = (Read-State $paths).Shortcuts | Where-Object Location -EQ 'Desktop'
+    Assert-Equal $updatedBackup.AppArguments '--updated-app-shortcut' 'replacement app arguments are preserved'
+    Invoke-ConnectionAction 'Restore' 'Programs' 'Prompt'
+    Assert-Equal (Get-LinkContents $paths.Desktop) $updatedDesktop 'rollback restores the replacement shortcut byte for byte'
+
+    Invoke-ConnectionAction 'Apply' 'Programs' 'System'
+    $link = $shell.CreateShortcut($paths.Desktop)
+    $link.TargetPath = $paths.PowerShell
+    $link.Arguments = '-NoProfile'
     $link.Save()
     $externalDesktop = Get-LinkContents $paths.Desktop
+    Invoke-ConnectionAction 'Apply' 'Programs' 'System'
+    Assert-Equal (Get-LinkContents $paths.Desktop) $externalDesktop 'unrelated shortcut survives reapply'
+    Assert-Equal (Test-ManagedLink ($shell.CreateShortcut($paths.Programs)) $paths 'Programs') $true 'unrelated desktop shortcut does not block Start menu'
     $failed = $false
     try { Invoke-ConnectionAction 'Restore' 'Programs' 'Prompt' } catch { $failed = $true }
     Assert-Equal $failed $true 'external edit is reported'
