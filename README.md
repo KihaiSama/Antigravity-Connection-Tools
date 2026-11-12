@@ -22,13 +22,25 @@
 
 如果 Windows 或 Antigravity 更新后重建了快捷方式，请重新运行设置脚本。脚本会备份仍指向同一 Antigravity 安装的快捷方式，再为它配置代理。无法识别的快捷方式会保留原样。
 
-### 从 GitHub 下载 ZIP
+### PowerShell 阻止运行时
 
-如果从 GitHub 下载的 ZIP 解压后，PowerShell 提示脚本来自网络且未经签名，请先审阅源码，再对脚本文件执行解除锁定。 [PowerShell 执行策略](https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_execution_policies)
+**仅放行 `AntigravityConnection.ps1`。** 先在 Windows PowerShell 5.1 中运行 `Get-ExecutionPolicy -List`。`MachinePolicy` 和 `UserPolicy` 来自组策略，优先于 CMD 入口为本次进程指定的 `RemoteSigned`。 [PowerShell 执行策略](https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_execution_policies?view=powershell-5.1)
+
+#### 文件带有下载标记
+
+如果 `RemoteSigned` 因下载标记阻止脚本，请先确认来源并审阅源码，再在解压目录中仅解除这个文件的锁定。也可以右键该文件，打开「属性」，在「常规」页勾选「解除锁定」并应用。
 
 ~~~powershell
 Unblock-File -LiteralPath .\AntigravityConnection.ps1
 ~~~
+
+#### 由管理员添加单文件允许规则
+
+1. 如果电脑已通过 **AppLocker** 管理脚本，请让管理员打开适用的 AppLocker 策略。单台电脑的入口是 `secpol.msc` →「应用程序控制策略」→「AppLocker」→「脚本规则」。
+2. 在现有「脚本规则」中选「创建新规则」，选择「允许」和需要运行脚本的用户或组，再选择「文件哈希」，浏览并选中解压后的 `AntigravityConnection.ps1`，最后创建并部署规则。显式拒绝规则优先，管理员应一并检查现有规则。 [创建文件哈希规则](https://learn.microsoft.com/windows/security/application-security/application-control/app-control-for-business/applocker/create-a-rule-that-uses-a-file-hash-condition) · [AppLocker 规则优先级](https://learn.microsoft.com/windows/security/application-security/application-control/app-control-for-business/applocker/understanding-applocker-rule-behavior)
+3. 安装时，脚本会把自身复制到 `%LOCALAPPDATA%\AntigravityConnection\AntigravityConnection.ps1`，供快捷方式启动。两份内容相同的文件可使用同一条哈希规则。更新后如果脚本内容变化，管理员需要为新版本更新哈希规则。
+
+如果组织使用 **App Control for Business（WDAC）**，请让管理员在适用策略中批准此脚本。若组策略强制 **AllSigned**，请使用由组织信任的发布者签名的副本。若组策略禁用脚本执行（**Restricted**），需由管理员按组织要求调整适用策略。解除下载标记只处理文件的来源标记。 [App Control 脚本策略](https://learn.microsoft.com/windows/security/application-security/application-control/app-control-for-business/design/script-enforcement) · [PowerShell 签名](https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_signing?view=powershell-5.1)
 
 ### 自定义代理
 

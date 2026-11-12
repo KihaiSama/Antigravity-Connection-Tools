@@ -22,13 +22,25 @@
 
 如果 Windows 或 Antigravity 更新後重新建立了捷徑，請再次執行設定腳本。腳本會先備份仍指向同一套 Antigravity 的捷徑，再為它設定代理伺服器。無法辨識的捷徑會保留原樣。
 
-### 從 GitHub 下載 ZIP
+### PowerShell 封鎖指令碼時
 
-解壓縮後，如果 PowerShell 提示腳本來自網際網路且未簽署，請先檢閱原始碼，再解除該檔案的封鎖。 [PowerShell 執行原則](https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_execution_policies)
+**僅允許 `AntigravityConnection.ps1`。** 請先在 Windows PowerShell 5.1 執行 `Get-ExecutionPolicy -List`。`MachinePolicy` 與 `UserPolicy` 由群組原則設定，優先於 CMD 入口為這次處理程序指定的 `RemoteSigned`。 [PowerShell 執行原則](https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_execution_policies?view=powershell-5.1)
+
+#### 檔案有下載標記
+
+如果 `RemoteSigned` 因下載標記封鎖指令碼，請先確認來源並檢閱原始碼，再到解壓縮目錄中僅解除這個檔案的封鎖。也可以對檔案按一下滑鼠右鍵，開啟「內容」，在「一般」頁籤勾選「解除封鎖」並套用。
 
 ~~~powershell
 Unblock-File -LiteralPath .\AntigravityConnection.ps1
 ~~~
+
+#### 請系統管理員新增單一檔案允許規則
+
+1. 如果電腦已透過 **AppLocker** 管理指令碼，請由系統管理員開啟適用的 AppLocker 原則。管理單台電腦時，可從 `secpol.msc` →「應用程式控制原則」→「AppLocker」→「指令碼規則」開啟。
+2. 在現有的「指令碼規則」中選擇「建立新規則」，選取「允許」及需要執行指令碼的使用者或群組，再選取「檔案雜湊」，瀏覽並選取解壓縮後的 `AntigravityConnection.ps1`，然後建立並部署規則。明確的拒絕規則優先，請系統管理員一併檢查現有規則。 [建立檔案雜湊規則](https://learn.microsoft.com/windows/security/application-security/application-control/app-control-for-business/applocker/create-a-rule-that-uses-a-file-hash-condition) · [AppLocker 規則優先順序](https://learn.microsoft.com/windows/security/application-security/application-control/app-control-for-business/applocker/understanding-applocker-rule-behavior)
+3. 安裝時，指令碼會將自身複製到 `%LOCALAPPDATA%\AntigravityConnection\AntigravityConnection.ps1`，供捷徑啟動。內容相同的兩份檔案可使用同一條雜湊規則。如果更新改變了指令碼內容，請系統管理員為新版更新雜湊規則。
+
+如果組織使用 **App Control for Business（WDAC）**，請由系統管理員在適用原則中核准此指令碼。若群組原則強制 **AllSigned**，請使用由組織信任的發行者簽署的版本。若群組原則停用指令碼執行（**Restricted**），請由系統管理員依組織規範調整適用原則。解除下載標記只處理檔案的來源標記。 [App Control 指令碼原則](https://learn.microsoft.com/windows/security/application-security/application-control/app-control-for-business/design/script-enforcement) · [PowerShell 簽署](https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_signing?view=powershell-5.1)
 
 ### 自訂代理伺服器
 

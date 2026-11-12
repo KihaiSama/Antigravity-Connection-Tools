@@ -22,13 +22,25 @@ Windows、Windows PowerShell 5.1、および Google Antigravity が必要です�
 
 Windows または Antigravity の更新でショートカットが作り直された場合は、設定スクリプトを再実行してください。同じ Antigravity のインストール先を指すショートカットをバックアップしてからプロキシを設定します。識別できないショートカットはそのまま残します。
 
-### GitHub から ZIP をダウンロードした場合
+### PowerShell でスクリプトがブロックされた場合
 
-展開したスクリプトについて、PowerShell がインターネットから取得した未署名のファイルだと表示した場合は、ソースを確認したうえで対象ファイルのブロックを解除してください。 [PowerShell の実行ポリシー](https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_execution_policies)
+**実行を許可するファイルは `AntigravityConnection.ps1` のみに絞ってください。** まず Windows PowerShell 5.1 で `Get-ExecutionPolicy -List` を実行します。`MachinePolicy` と `UserPolicy` はグループポリシーで設定され、CMD ファイルが PowerShell プロセスに指定する `RemoteSigned` より優先されます。 [PowerShell の実行ポリシー](https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_execution_policies?view=powershell-5.1)
+
+#### ダウンロード元の情報が付いている場合
+
+`RemoteSigned` がダウンロード済みのスクリプトをブロックする場合は、入手元とソースコードを確認してから、展開先でこのファイルだけのブロックを解除してください。ファイルを右クリックし、「プロパティ」の「全般」タブで「ブロックの解除」を選んで適用する方法もあります。
 
 ~~~powershell
 Unblock-File -LiteralPath .\AntigravityConnection.ps1
 ~~~
+
+#### 管理者にファイル単位の許可ルールを依頼する
+
+1. すでに **AppLocker** でスクリプトを管理している環境では、管理者に適用対象の AppLocker ポリシーを開いてもらいます。ローカルポリシーの場合は、`secpol.msc` の「アプリケーション制御ポリシー」→「AppLocker」→「スクリプトの規則」を開きます。
+2. 既存の「スクリプトの規則」で「新しい規則の作成」を選び、「許可」と対象のユーザーまたはグループを指定します。条件に「ファイル ハッシュ」を選び、展開した `AntigravityConnection.ps1` を指定して規則を作成・適用します。明示的な拒否規則が優先されるため、管理者は既存の規則も確認してください。 [ファイル ハッシュ規則の作成](https://learn.microsoft.com/windows/security/application-security/application-control/app-control-for-business/applocker/create-a-rule-that-uses-a-file-hash-condition) · [AppLocker の規則の動作](https://learn.microsoft.com/windows/security/application-security/application-control/app-control-for-business/applocker/understanding-applocker-rule-behavior)
+3. セットアップ時にスクリプトが `%LOCALAPPDATA%\AntigravityConnection\AntigravityConnection.ps1` にコピーされ、ショートカットはそのコピーを実行します。内容が同じ場合は、両方のファイルに同じハッシュ規則が適用されます。更新でスクリプトの内容が変わった場合は、管理者に新しいハッシュを承認してもらってください。
+
+組織が **App Control for Business（WDAC）** を使っている場合は、管理者に該当するポリシーでこのスクリプトの承認を依頼してください。グループポリシーで **AllSigned** が適用されている場合は、組織が信頼する発行元が署名したコピーを使用します。グループポリシーでスクリプトの実行が無効（**Restricted**）の場合は、管理者が組織のルールに沿って適用ポリシーを調整する必要があります。ファイルのブロック解除で削除されるのは、ダウンロード元を示す情報です。 [App Control のスクリプト制御](https://learn.microsoft.com/windows/security/application-security/application-control/app-control-for-business/design/script-enforcement) · [PowerShell スクリプトの署名](https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_signing?view=powershell-5.1)
 
 ### カスタムプロキシ
 

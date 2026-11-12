@@ -22,13 +22,25 @@ Run `01-Use-Windows-Proxy.cmd` once. After restarting Windows or changing proxy 
 
 If Windows or an Antigravity update recreates a shortcut, run the setup script again. It backs up shortcuts that still point to the same Antigravity installation before applying the proxy settings. It leaves unrecognized shortcuts alone.
 
-### Downloading a ZIP from GitHub
+### When PowerShell blocks the script
 
-If PowerShell reports that the extracted script came from the internet and is unsigned, review the source before unblocking the file. [PowerShell execution policies](https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_execution_policies)
+**Allow only `AntigravityConnection.ps1`.** Run `Get-ExecutionPolicy -List` in Windows PowerShell 5.1. `MachinePolicy` and `UserPolicy` come from Group Policy and take precedence over the `RemoteSigned` policy that the CMD launchers request for their PowerShell process. [PowerShell execution policies](https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_execution_policies?view=powershell-5.1)
+
+#### The file has a download marker
+
+If `RemoteSigned` blocks the downloaded script, verify its source and review the code. Then unblock just this file from the extracted folder. You can also right-click the file, open **Properties**, select **Unblock** on the **General** tab, and apply the change.
 
 ~~~powershell
 Unblock-File -LiteralPath .\AntigravityConnection.ps1
 ~~~
+
+#### Ask an administrator for a per-file allow rule
+
+1. If the computer already uses **AppLocker** to manage scripts, ask an administrator to open the applicable AppLocker policy. For a local policy, open `secpol.msc` and go to **Application Control Policies → AppLocker → Script Rules**.
+2. In the existing **Script Rules** collection, choose **Create New Rule**. Select **Allow** and the user or group that needs the script, choose **File hash**, and browse to the extracted `AntigravityConnection.ps1`. Create and deploy the rule. Explicit deny rules take precedence, so the administrator should review the existing rules as well. [Create a file hash rule](https://learn.microsoft.com/windows/security/application-security/application-control/app-control-for-business/applocker/create-a-rule-that-uses-a-file-hash-condition) · [AppLocker rule behavior](https://learn.microsoft.com/windows/security/application-security/application-control/app-control-for-business/applocker/understanding-applocker-rule-behavior)
+3. Setup copies the script to `%LOCALAPPDATA%\AntigravityConnection\AntigravityConnection.ps1` for the shortcuts to run. One hash rule covers both copies when their contents match. If an update changes the script, the administrator needs to approve the new hash.
+
+If your organization uses **App Control for Business (WDAC)**, ask the administrator to approve this script in the applicable policy. If Group Policy enforces **AllSigned**, use a copy signed by a publisher your organization trusts. If Group Policy disables script execution (**Restricted**), the administrator must address it through the applicable policy. Unblocking a file only removes its download marker. [App Control script enforcement](https://learn.microsoft.com/windows/security/application-security/application-control/app-control-for-business/design/script-enforcement) · [PowerShell script signing](https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_signing?view=powershell-5.1)
 
 ### Custom proxies
 

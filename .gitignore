@@ -1,0 +1,9 @@
+# Local output and connection state
+/dist/
+/tests/AntigravityConnection-fixture-*/
+/connection.json
+/.env
+/.env.*
+*.lnk
+*.log
+*.zip
